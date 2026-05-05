@@ -3,11 +3,23 @@ from CoolProp.CoolProp import PropsSI
 fluid = "Methane"
 
 # values from CFD
-h_in = 6.902e+5     # inlet static enthalpy (J/kg)           6.902e+5 [J kg^-1]
-h_out = 6.794e+5    # outlet static enthalpy (J/kg)          6.794e+5 [J kg^-1]
+h_in = 6.624e+5      # inlet static enthalpy (J/kg)               6.624e+5 [J kg^-1]            =areaAve(Static Enthalpy)@inlet
+h_out = 6.333e+5      # outlet static enthalpy (J/kg)              6.333e+5 [J kg^-1]             =areaAve(Static Enthalpy)@outlet
 
-s_in = 3.622e+3     # inlet static entropy (J/kg-K)          3.622e+3 [J kg^-1 K^-1]
-P_out = 6.245e+6    # outlet static pressure (Pa)                 6.245e+6 [Pa]
+s_in = 3.425e+3       # inlet static entropy (J/kg-K)              3.425e+3 [J kg^-1 K^-1]        =areaAve(Static Entropy)@inlet      =areaAve(Static Entropy)@outlet
+P_out = 6.245e+6      # outlet static pressure (Pa)                6.245e+6 [Pa]             =areaAve(Pressure)@outlet           =areaAve(Pressure)@inlet
+
+# Power Calculation
+mdot = 5.875e-2       # kg/s                                5.875e-2 [kg s^-1]
+
+r1 = 1.771e-2        # m                                    1.771e-2 [m]          =areaAve(r )@inlet           sqrt(X^2 + Y^2)
+r2 = 1.000e-2      # m                                1.000e-2 [m]          =areaAve(r )@outlet
+
+V_theta_1 = 1.440e+2       # m/s                        -1.440e+2 [m s^-1]     =areaAve(Velocity Circumferential)@inlet
+V_theta_2 = 2.396e+2       # m/s                        -2.396e+2 [m s^-1]     =areaAve(Velocity Circumferential)@outlet
+
+omega = 2618    # rad/s
+
 
 # isentropic outlet enthalpy
 h_out_s = PropsSI('H','P',P_out,'S',s_in,fluid)
@@ -21,18 +33,6 @@ eta = delta_h_actual / delta_h_isentropic
 
 print("Isentropic outlet enthalpy:", h_out_s)
 print("Efficiency:", eta*100, "%")
-
-# Power Calculation
-
-mdot = 4.000e-2     # kg/s                        4.000e-2 [kg s^-1]
-
-r1 = 1.626e-2      # m                                1.771e-2 [m]
-r2 = 1.000e-2      # m                                1.000e-2 [m]
-
-V_theta_1 = -8.279e+1     # m/s
-V_theta_2 = -3.247e+2     # m/s
-
-omega = 2618    # rad/s
 
 # Euler's Turbomachinery Equation
 

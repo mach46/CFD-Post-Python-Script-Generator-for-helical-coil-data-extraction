@@ -8,33 +8,35 @@ MODE = "stationary"
 # =========================================
 
 def x_func(t):
-    return (0.01 + (0.017711374999993368 - 0.01) * t / (2*np.pi*4.909213797136834)) * np.cos(t)
+    return (0.01 + (0.024020000000021437-0.01)*t/(2*np.pi*8.925409208607137))*np.cos(t)
+
 
 def y_func(t):
-    return (0.01 + (0.017711374999993368 - 0.01) * t / (2*np.pi*4.909213797136834)) * np.sin(t)
+    return (0.01 + (0.024020000000021437-0.01)*t/(2*np.pi*8.925409208607137))*np.sin(t)
+
 
 def z_func(t):
-    return (0.061689180574821464 / (2*np.pi*4.909213797136834)) * t
+    return (0.11215669211535731/(2*np.pi*8.925409208607137))*t
 
 t_start = 0
-t_end   = 2 * np.pi * 4.909213797136834
+t_end   = 2*np.pi* 8.925409208607137
 
 # =========================================
 # OUTPUT PATHS
 # =========================================
 
-centerline_csv  = r"E:\rotation_case_hpc\d2_stationary\data analysis\d2_centerline.csv"
-arclength_csv   = r"E:\rotation_case_hpc\d2_stationary\data analysis\d2_centerline_arclength.csv"
-output_cse      = r"E:\rotation_case_hpc\d2_stationary\data analysis\d2_stationary_script.cse"
-output_csv      = r"E:\rotation_case_hpc\d2_stationary\data analysis\d2_stationary_extracted_data.csv"
-bound_radius    = 0.0025 #m
-n_points = 5000
+centerline_csv  = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_centerline.csv"
+arclength_csv   = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_centerline_arclength.csv"
+output_cse      = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_stationary_script.cse"
+output_csv      = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_stationary_extracted_data.csv"
+bound_radius    = 0.005 #m
+n_points = 1000
 
 # =========================================
 # STEP 1: DENSE SAMPLING
 # =========================================
 
-t_dense = np.linspace(t_start, t_end, 10000)
+t_dense = np.linspace(t_start, t_end, 3000)
 
 x_dense = x_func(t_dense)
 y_dense = y_func(t_dense)
@@ -154,47 +156,47 @@ with open(output_cse, "w") as f:
 
         # -------- COMMON DEFINITIONS (IMPORTANT: f-string) --------
         defs_block = f"""
-! $P      = areaAve("Pressure","plane_{i}");
-! $Pg     = areaAve("Pressure.Gradient","plane_{i}");
-! $T      = areaAve("Temperature","plane_{i}");
-! $V      = massFlowAve("Velocity","plane_{i}");
-! $rho    = areaAve("Density","plane_{i}");
-! $mu     = areaAve("Dynamic Viscosity","plane_{i}");
-! $mu_eff = areaAve("Effective Viscosity","plane_{i}");
-! $mut    = areaAve("Eddy Viscosity","plane_{i}");
-! $a      = areaAve("Local Speed of Sound","plane_{i}");
-! $M      = areaAve("Mach Number","plane_{i}");
-! $R      = areaAve("R Gas Constant","plane_{i}");
-! $Cp     = areaAve("Specific Heat Capacity at Constant Pressure","plane_{i}");
-! $h      = areaAve("Static Enthalpy","plane_{i}");
-! $s      = areaAve("Static Entropy","plane_{i}");
-! $ht     = areaAve("Total Enthalpy","plane_{i}");
-! $Et     = areaAve("Total Energy","plane_{i}");
-! $tau    = areaAve("Wall Shear","plane_{i}");
-! $P0     = areaAve("Total Pressure","plane_{i}");
-! $T0     = areaAve("Total Temperature","plane_{i}");
-! $P0_g   = areaAve("Total Pressure.Gradient","plane_{i}");
-! $rho_m  = massFlowAve("Density","plane_{i}");
-! $V_a    = areaAve("Velocity","plane_{i}");
+! $P      = areaAve("Pressure","scriptingplane");
+! $Pg     = areaAve("Pressure.Gradient","scriptingplane");
+! $T      = areaAve("Temperature","scriptingplane");
+! $V      = massFlowAve("Velocity","scriptingplane");
+! $rho    = areaAve("Density","scriptingplane");
+! $mu     = areaAve("Dynamic Viscosity","scriptingplane");
+! $mu_eff = areaAve("Effective Viscosity","scriptingplane");
+! $mut    = areaAve("Eddy Viscosity","scriptingplane");
+! $a      = areaAve("Local Speed of Sound","scriptingplane");
+! $M      = areaAve("Mach Number","scriptingplane");
+! $R      = areaAve("R Gas Constant","scriptingplane");
+! $Cp     = areaAve("Specific Heat Capacity at Constant Pressure","scriptingplane");
+! $h      = areaAve("Static Enthalpy","scriptingplane");
+! $s      = areaAve("Static Entropy","scriptingplane");
+! $ht     = areaAve("Total Enthalpy","scriptingplane");
+! $Et     = areaAve("Total Energy","scriptingplane");
+! $tau    = areaAve("Wall Shear","scriptingplane");
+! $P0     = areaAve("Total Pressure","scriptingplane");
+! $T0     = areaAve("Total Temperature","scriptingplane");
+! $P0_g   = areaAve("Total Pressure.Gradient","scriptingplane");
+! $rho_m  = massFlowAve("Density","scriptingplane");
+! $V_a    = areaAve("Velocity","scriptingplane");
 """
 
         # -------- MODE-SPECIFIC DEFINITIONS --------
         if MODE == "rotating":
             extra_defs_block = f"""
-! $r_a = areaAve("Radial Angular Coordinate","plane_{i}");
-! $V_theta = areaAve("Velocity Circumferential","plane_{i}");
-! $Vax   = areaAve("Velocity Axial","plane_{i}");
-! $Vr    = areaAve("Velocity Radial","plane_{i}");
-! $Vtheta_stn = areaAve("Velocity Circumferential In Stn Frame","plane_{i}");
+! $r_a = areaAve("Radial Angular Coordinate","scriptingplane");
+! $V_theta = areaAve("Velocity Circumferential","scriptingplane");
+! $Vax   = areaAve("Velocity Axial","scriptingplane");
+! $Vr    = areaAve("Velocity Radial","scriptingplane");
+! $Vtheta_stn = areaAve("Velocity Circumferential In Stn Frame","scriptingplane");
 """
         else:
             extra_defs_block = f"""
-! $Vax = areaAve("Velocity Axial","plane_{i}");
+! $Vax = areaAve("Velocity Axial","scriptingplane");
 """
 
         # -------- WRITE BLOCK --------
         f.write(f""" 
-PLANE: plane_{i}
+PLANE: scriptingplane
   Option = Point and Normal 
   Point = {x[i]} [m], {y[i]} [m], {z[i]} [m] 
   Normal = {tx[i]}, {ty[i]}, {tz[i]} 
@@ -205,7 +207,7 @@ END
 {defs_block}
 {extra_defs_block}
 
-! $mdot = massFlow(plane_{i});
+! $mdot = massFlow(scriptingplane);
 
 !print FILE "$P,$Pg,$T,$V,$rho,$mu,$mu_eff,$mut,$a,$M,$R,$Cp,$h,$s,$ht,$Et,$tau,$P0,$T0,$P0_g,$rho_m,$V_a,{extra_print}$mdot\\n";
 """)
