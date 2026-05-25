@@ -1,36 +1,80 @@
 import numpy as np
 import pandas as pd
+import os
+import shutil
 
 #MODE = "rotating"   # or "stationary"
-MODE = "stationary"
+MODE = "rotating"
 # =========================================
 # USER INPUT (ONLY THIS SECTION)
 # =========================================
+diameter = "d5"
+rpm = "25k"
+
+if diameter == "d2":
+    r_start = 0.01
+    r_end = 0.017711374999993368
+    height = 0.061689180574821464
+    N = 4.909213797136834
+    length = 0.432
+
+elif diameter == "d3":
+    r_start = 0.01
+    r_end = 0.02102387500000713
+    height = 0.08818839902226061
+    N = 7.018016793113211
+    length = 0.690
+
+elif diameter == "d4":
+    r_start = 0.01
+    r_end = 0.024020000000021437
+    height = 0.11215669211535731
+    N = 8.925409208607137
+    length = 0.961
+
+elif diameter == "d5":
+    r_start = 0.01
+    r_end = 0.026768000000034556
+    height = 0.13414004375116345
+    N = 10.674840343081605
+    length = 1.241
+
+else:
+    raise ValueError(f"Invalid diameter: {diameter}")
 
 def x_func(t):
-    return (0.01 + (0.024020000000021437-0.01)*t/(2*np.pi*8.925409208607137))*np.cos(t)
+    return (r_start + (r_end-r_start)*t/(2*np.pi*N))*np.cos(t)
 
 
 def y_func(t):
-    return (0.01 + (0.024020000000021437-0.01)*t/(2*np.pi*8.925409208607137))*np.sin(t)
+    return (r_start + (r_end-r_start)*t/(2*np.pi*N))*np.sin(t)
 
 
 def z_func(t):
-    return (0.11215669211535731/(2*np.pi*8.925409208607137))*t
+    return (height/(2*np.pi*N))*t
 
 t_start = 0
-t_end   = 2*np.pi* 8.925409208607137
+t_end   = 2*np.pi* N
 
 # =========================================
 # OUTPUT PATHS
 # =========================================
 
-centerline_csv  = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_centerline.csv"
-arclength_csv   = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_centerline_arclength.csv"
-output_cse      = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_stationary_script.cse"
-output_csv      = r"E:\rotation_case_hpc\d4_stationary\data analysis\d4_stationary_extracted_data.csv"
+folder_path = fr"E:\Dhairya_Internship_IITKGP\rotation_case_hpc\{diameter}\{diameter}_{rpm}_rpm\data analysis"
+os.makedirs(folder_path, exist_ok=True)
+common_folder_path = fr"C:\Dhairya_internship\cfdpost_script_files"
+os.makedirs(common_folder_path, exist_ok=True)
+
+centerline_csv = os.path.join(folder_path, f"{diameter}_centerline.csv")
+arclength_csv  = os.path.join(folder_path, f"{diameter}_centerline_arclength.csv")
+output_cse     = os.path.join(folder_path, f"{diameter}_{rpm}_script.cse")
+output_cse_common = os.path.join(common_folder_path, f"{diameter}_{rpm}_script.cse")
+output_csv     = os.path.join( f"{diameter}_{rpm}_extracted_data.csv")
+
 bound_radius    = 0.005 #m
-n_points = 1000
+ds_target = 0.0005  # meters
+n_points = int(length / ds_target)
+
 
 # =========================================
 # STEP 1: DENSE SAMPLING
@@ -60,10 +104,19 @@ s = s - s[0]
 # STEP 3: UNIFORM ARC-LENGTH POINTS
 # =========================================
 
-
-
 s_uniform = np.linspace(0, s[-1], n_points)
 t_uniform = np.interp(s_uniform, s, t_dense)
+
+# Generate arc-length locations at 1 mm spacing
+#s_uniform = np.arange(0, s[-1], ds_target)
+
+# Ensure last point is included (optional but recommended)
+#s_uniform = np.append(s_uniform, s[-1])
+
+# Interpolate corresponding parameter t
+#t_uniform = np.interp(s_uniform, s, t_dense)
+
+print(f"Total planes created: {len(s_uniform)}")
 
 # =========================================
 # STEP 4: FINAL POINTS
@@ -121,11 +174,37 @@ print(f"Arclength CSV saved -→ {arclength_csv}")
 # VARIABLE CONFIG
 # =========================
 
-common_header = "Pressure,Pressure Gradient,Temperature,Velocity,Density,Dynamic Viscosity,Effective Viscosity,Eddy Viscosity,Speed Of Sound,Mach number,Rgas,Cp,Static Enthalpy,Static Entropy,Total Enthalpy,Total Energy,Wall Shear,Total Pressure,Total Temperature,Total Pressure Gradient,Density mwa,Velocity awa,"
+common_header = (
+"Pressure,Pressure Coefficient,Dynamic Pressure,"
+"Temperature,Density,"
+"Dynamic Viscosity,Effective Viscosity,Eddy Viscosity,"
+"Thermal Conductivity,Effective Thermal Conductivity,"
+"Prandtl Number,Effective Prandtl Number,"
+"R Gas Constant,Specific Heat Capacity,"
+"Static Enthalpy,Entropy,Total Energy,Speed Of Sound,"
+"Velocity (mwa),Density (mwa),Mach Number (mwa),"
+"Total Pressure (mwa),Total Temperature (mwa),Total Enthalpy (mwa),"
+"Velocity Axial (mwa),Velocity Radial (mwa),Velocity Circumferential (mwa),"
+"Dp Dx,Dp Dy,Dp Dz,"
+"Vorticity X,Vorticity Y,Vorticity Z,Vorticity Magnitude,"
+"Q Criterion Normalized,Q Criterion Raw,Lambda 2 Criterion,Helicity,"
+"Turbulence Kinetic Energy,Turbulence Eddy Frequency,Turbulence Eddy Dissipation,Turbulence Intensity,"
+"Wall Shear,Wall Shear X,Wall Shear Y,Wall Shear Z,"
+"Wall Temperature,Wall Adjacent Temperature,"
+"Heat Flux,"
+"X,Y,Z,Angular Coordinate,Radial Angular Coordinate"
+)
 
 # -------- rotating-only --------
-rot_header = "Radial coordinate,V_theta,V_axial,V_radial,V_theta_stn,"
-rot_print = "$r_a,$V_theta,$Vax,$Vr,$Vtheta_stn,"
+rot_header = (
+"Radial Angular Coordinate,"
+"Velocity Circumferential (mwa),"
+"Velocity Axial (mwa),"
+"Velocity Radial (mwa),"
+"Relative Total Pressure (mwa),"
+"Rothalpy (mwa)"
+)
+rot_print = "$r_a,$V_theta,$Vax,$Vr,$P0_rel,$roth"
 
 # -------- stationary --------
 stat_header = "V_axial,"
@@ -148,7 +227,7 @@ with open(output_cse, "w") as f:
 
     # Header
     f.write(f"""!open(FILE, '> {output_csv}');
-!print FILE "{common_header}{extra_header}mdot\\n";
+!print FILE "{common_header},{extra_header},mdot\\n";
 """)
 
     # Loop
@@ -156,38 +235,123 @@ with open(output_cse, "w") as f:
 
         # -------- COMMON DEFINITIONS (IMPORTANT: f-string) --------
         defs_block = f"""
-! $P      = areaAve("Pressure","scriptingplane");
-! $Pg     = areaAve("Pressure.Gradient","scriptingplane");
-! $T      = areaAve("Temperature","scriptingplane");
-! $V      = massFlowAve("Velocity","scriptingplane");
-! $rho    = areaAve("Density","scriptingplane");
-! $mu     = areaAve("Dynamic Viscosity","scriptingplane");
-! $mu_eff = areaAve("Effective Viscosity","scriptingplane");
-! $mut    = areaAve("Eddy Viscosity","scriptingplane");
-! $a      = areaAve("Local Speed of Sound","scriptingplane");
-! $M      = areaAve("Mach Number","scriptingplane");
-! $R      = areaAve("R Gas Constant","scriptingplane");
-! $Cp     = areaAve("Specific Heat Capacity at Constant Pressure","scriptingplane");
-! $h      = areaAve("Static Enthalpy","scriptingplane");
-! $s      = areaAve("Static Entropy","scriptingplane");
-! $ht     = areaAve("Total Enthalpy","scriptingplane");
-! $Et     = areaAve("Total Energy","scriptingplane");
-! $tau    = areaAve("Wall Shear","scriptingplane");
-! $P0     = areaAve("Total Pressure","scriptingplane");
-! $T0     = areaAve("Total Temperature","scriptingplane");
-! $P0_g   = areaAve("Total Pressure.Gradient","scriptingplane");
-! $rho_m  = massFlowAve("Density","scriptingplane");
-! $V_a    = areaAve("Velocity","scriptingplane");
+# -------------------------------
+# AREA AVERAGES (local properties)
+# -------------------------------
+
+! $P        = areaAve("Pressure","scriptingplane");
+! $Cp_coef  = areaAve("Pressure Coefficient","scriptingplane");
+! $q_dyn    = areaAve("Dynamic Pressure","scriptingplane");
+
+! $T        = areaAve("Temperature","scriptingplane");
+! $rho      = areaAve("Density","scriptingplane");
+
+! $mu       = areaAve("Dynamic Viscosity","scriptingplane");
+! $mu_eff   = areaAve("Effective Viscosity","scriptingplane");
+! $mut      = areaAve("Eddy Viscosity","scriptingplane");
+
+! $k_th     = areaAve("Thermal Conductivity","scriptingplane");
+! $k_eff    = areaAve("Effective Thermal Conductivity","scriptingplane");
+
+! $Pr       = areaAve("Prandtl Number","scriptingplane");
+! $Pr_eff   = areaAve("Effective Prandtl Number","scriptingplane");
+
+! $R        = areaAve("R Gas Constant","scriptingplane");
+! $Cp       = areaAve("Specific Heat Capacity at Constant Pressure","scriptingplane");
+
+! $h        = areaAve("Static Enthalpy","scriptingplane");
+! $s        = areaAve("Static Entropy","scriptingplane");
+
+! $Et       = areaAve("Total Energy","scriptingplane");
+
+! $a        = areaAve("Local Speed of Sound","scriptingplane");
+
+# -------------------------------
+# MASS FLOW AVERAGES (flow physics)
+# -------------------------------
+
+! $V        = massFlowAve("Velocity","scriptingplane");
+! $rho_m    = massFlowAve("Density","scriptingplane");
+
+! $M        = massFlowAve("Mach Number","scriptingplane");
+
+! $P0       = massFlowAve("Total Pressure","scriptingplane");
+! $T0       = massFlowAve("Total Temperature","scriptingplane");
+
+! $ht       = massFlowAve("Total Enthalpy","scriptingplane");
+
+! $Vax      = massFlowAve("Velocity Axial","scriptingplane");
+! $Vr       = massFlowAve("Velocity Radial","scriptingplane");
+! $Vtheta   = massFlowAve("Velocity Circumferential","scriptingplane");
+
+# -------------------------------
+# GRADIENTS (components only)
+# -------------------------------
+
+! $Pg_x     = areaAve("Dp Dx","scriptingplane");
+! $Pg_y     = areaAve("Dp Dy","scriptingplane");
+! $Pg_z     = areaAve("Dp Dz","scriptingplane");
+
+# -------------------------------
+# VORTEX / FLOW STRUCTURE
+# -------------------------------
+
+! $vort_x   = areaAve("Vorticity X","scriptingplane");
+! $vort_y   = areaAve("Vorticity Y","scriptingplane");
+! $vort_z   = areaAve("Vorticity Z","scriptingplane");
+! $vort_mag = areaAve("Vorticity","scriptingplane");
+
+! $Qcritnorm    = areaAve("Q Criterion Normalized","scriptingplane");
+! $Qcritraw    = areaAve("Q Criterion Raw","scriptingplane");
+! $lambda2  = areaAve("Lambda 2 Criterion","scriptingplane");
+! $hel      = areaAve("Helicity","scriptingplane");
+
+# -------------------------------
+# TURBULENCE
+# -------------------------------
+
+! $k_turb   = areaAve("Turbulence Kinetic Energy","scriptingplane");
+! $omega    = areaAve("Turbulence Eddy Frequency","scriptingplane");
+! $eps      = areaAve("Turbulence Eddy Dissipation","scriptingplane");
+! $TI       = areaAve("Turbulence Intensity","scriptingplane");
+
+# -------------------------------
+# WALL / HEAT TRANSFER
+# -------------------------------
+
+! $tau      = areaAve("Wall Shear","scriptingplane");
+! $tau_x    = areaAve("Wall Shear X","scriptingplane");
+! $tau_y    = areaAve("Wall Shear Y","scriptingplane");
+! $tau_z    = areaAve("Wall Shear Z","scriptingplane");
+
+! $T_wall   = areaAve("Wall Temperature","scriptingplane");
+! $T_adj    = areaAve("Wall Adjacent Temperature","scriptingplane");
+
+! $q_flux   = areaAve("Heat Flux","scriptingplane");
+
+# -------------------------------
+# COORDINATES
+# -------------------------------
+
+! $x        = areaAve("X","scriptingplane");
+! $y        = areaAve("Y","scriptingplane");
+! $z        = areaAve("Z","scriptingplane");
+
+! $theta    = areaAve("Angular Coordinate","scriptingplane");
+! $r_theta  = areaAve("Radial Angular Coordinate","scriptingplane");
 """
 
         # -------- MODE-SPECIFIC DEFINITIONS --------
         if MODE == "rotating":
             extra_defs_block = f"""
 ! $r_a = areaAve("Radial Angular Coordinate","scriptingplane");
-! $V_theta = areaAve("Velocity Circumferential","scriptingplane");
-! $Vax   = areaAve("Velocity Axial","scriptingplane");
-! $Vr    = areaAve("Velocity Radial","scriptingplane");
-! $Vtheta_stn = areaAve("Velocity Circumferential In Stn Frame","scriptingplane");
+
+! $V_theta = massFlowAve("Velocity Circumferential","scriptingplane");
+! $Vax     = massFlowAve("Velocity Axial","scriptingplane");
+! $Vr      = massFlowAve("Velocity Radial","scriptingplane");
+
+! $P0_rel   = massFlowAve("Relative Total Pressure","scriptingplane");
+! $roth     = massFlowAve("Rothalpy","scriptingplane");
 """
         else:
             extra_defs_block = f"""
@@ -209,9 +373,29 @@ END
 
 ! $mdot = massFlow(scriptingplane);
 
-!print FILE "$P,$Pg,$T,$V,$rho,$mu,$mu_eff,$mut,$a,$M,$R,$Cp,$h,$s,$ht,$Et,$tau,$P0,$T0,$P0_g,$rho_m,$V_a,{extra_print}$mdot\\n";
+!print FILE "$P,$Cp_coef,$q_dyn,\
+$T,$rho,\
+$mu,$mu_eff,$mut,\
+$k_th,$k_eff,\
+$Pr,$Pr_eff,\
+$R,$Cp,\
+$h,$s,$Et,$a,\
+$V,$rho_m,$M,$P0,$T0,$ht,\
+$Vax,$Vr,$Vtheta,\
+$Pg_x,$Pg_y,$Pg_z,\
+$vort_x,$vort_y,$vort_z,$vort_mag,\
+$Qcritnorm,$Qcritraw,$lambda2,$hel,\
+$k_turb,$omega,$eps,$TI,\
+$tau,$tau_x,$tau_y,$tau_z,\
+$T_wall,$T_adj,\
+$q_flux,\
+$x,$y,$z,$theta,$r_theta,\
+{extra_print},$mdot\\n";
 """)
 
     f.write("\n!close(FILE);\n")
 
 print(f"CSE script generated → {output_cse}")
+
+# copy file to another location
+shutil.copy(output_cse, common_folder_path)
